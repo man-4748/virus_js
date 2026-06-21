@@ -1,0 +1,21 @@
+# Node dependencies
+node_modules/
+
+# Local workspace files (ignore any custom files created in workspace, only keep default samples)
+workspace/*
+!workspace/welcome.js
+!workspace/helper.css
+
+# System files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Environment and log files
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

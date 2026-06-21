@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SysOps Developer Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="bg-glow glow-blue"></div>
+  <div class="bg-glow glow-purple"></div>
+
+  <div class="dashboard-container">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="header-logo">
+        <span class="logo-icon">⚡</span>
+        <h1>SysOps <span class="accent-text">Dashboard</span></h1>
+      </div>
+      <div class="system-status">
+        <span class="status-dot pulsing"></span>
+        <span class="status-text">SYSTEM ONLINE</span>
+      </div>
+    </header>
+
+    <!-- Grid Layout -->
+    <main class="dashboard-grid">
+      <!-- Section 1: System Specs -->
+      <section class="grid-card system-specs">
+        <div class="card-header">
+          <span class="card-icon">💻</span>
+          <h2>System Information</h2>
+        </div>
+        <div class="card-body">
+          <div class="spec-grid">
+            <div class="spec-item">
+              <span class="spec-label">Operating System</span>
+              <span class="spec-value" id="spec-os">Loading...</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Platform / Release</span>
+              <span class="spec-value" id="spec-platform">Loading...</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">CPU Architecture</span>
+              <span class="spec-value" id="spec-arch">Loading...</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Hostname</span>
+              <span class="spec-value" id="spec-host">Loading...</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Node.js Version</span>
+              <span class="spec-value accent-text-green" id="spec-node">Loading...</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Home Directory</span>
+              <span class="spec-value file-path" id="spec-home">Loading...</span>
+            </div>
+          </div>
+
+          <!-- Live Memory Chart / Progress Bar -->
+          <div class="memory-usage-container">
+            <div class="memory-labels">
+              <span>Memory Usage</span>
+              <span id="memory-percent">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="memory-fill" style="width: 0%"></div>
+            </div>
+            <div class="memory-details">
+              <span id="memory-free">Free: 0 GB</span>
+              <span id="memory-total">Total: 0 GB</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Environment Variables -->
+      <section class="grid-card env-vars">
+        <div class="card-header">
+          <span class="card-icon">⚙️</span>
+          <h2>Environment Variables</h2>
+          <div class="search-box">
+            <input type="text" id="env-search" placeholder="Search variables...">
+          </div>
+        </div>
+        <div class="card-body scrollable">
+          <table class="env-table">
+            <thead>
+              <tr>
+                <th>Variable Name</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody id="env-table-body">
+              <tr>
+                <td colspan="2" class="empty-state">Loading environment variables...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 3: File Manager & CRUD Workspace -->
+      <section class="grid-card file-manager span-two-cols">
+        <div class="card-header">
+          <div class="header-title">
+            <span class="card-icon">📂</span>
+            <h2>Workspace Code Manager</h2>
+            <span class="badge">SANDBOXED</span>
+          </div>
+          <div class="file-actions">
+            <button id="btn-new" class="btn btn-primary">+ New File</button>
+          </div>
+        </div>
+        
+        <div class="workspace-layout">
+          <!-- Files List Sidebar -->
+          <div class="files-sidebar">
+            <div class="sidebar-header">Files in ./workspace</div>
+            <ul class="file-list" id="file-list-ul">
+              <li class="empty-state">Loading workspace...</li>
+            </ul>
+          </div>
+
+          <!-- Code Editor Panel -->
+          <div class="editor-panel">
+            <div class="editor-header">
+              <div class="current-file-info">
+                <span class="file-icon" id="editor-file-icon">📄</span>
+                <span id="active-filename" class="active-filename">No file selected</span>
+                <span id="editor-dirty-indicator" class="dirty-indicator hidden">* modified</span>
+              </div>
+              <div class="editor-buttons">
+                <button id="btn-save" class="btn btn-success" disabled>Save File</button>
+                <button id="btn-delete" class="btn btn-danger" disabled>Delete</button>
+              </div>
+            </div>
+            <div class="editor-body">
+              <!-- New File Prompt (Hidden by default) -->
+              <div id="new-file-modal" class="editor-overlay hidden">
+                <div class="modal-box">
+                  <h3>Create New File</h3>
+                  <input type="text" id="new-filename-input" placeholder="e.g. index.js">
+                  <div class="modal-buttons">
+                    <button id="btn-modal-create" class="btn btn-success">Create</button>
+                    <button id="btn-modal-cancel" class="btn btn-secondary">Cancel</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Textarea editor -->
+              <textarea id="code-textarea" placeholder="// Select a file from the sidebar or create a new one to begin editing..." disabled></textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <p>Secure Sandbox System Info & Workspace Dashboard &copy; 2026. Made with ❤️ by Antigravity.</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

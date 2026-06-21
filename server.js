@@ -59,7 +59,8 @@ app.get('/api/system-info', (req, res) => {
     const safeEnvKeys = [
       'PATH', 'OS', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS',
       'USERDOMAIN', 'USERNAME', 'USERPROFILE', 'LANG', 'SHELL',
-      'NODE_ENV', 'APPDATA', 'LOCALAPPDATA', 'COMPUTERNAME'
+      'NODE_ENV', 'APPDATA', 'LOCALAPPDATA', 'COMPUTERNAME',
+      'USER', 'HOME', 'TERM', 'PWD', 'LOGNAME'
     ];
     const envData = {};
     safeEnvKeys.forEach(key => {

@@ -47,7 +47,10 @@ function formatBytesToGb(bytes) {
 // 1. Fetch & Render System Information
 async function fetchSystemInfo() {
   try {
-    const res = await fetch('/api/system-info');
+    const urlParams = new URLSearchParams(window.location.search);
+    const simulate = urlParams.get('simulate');
+    const apiUrl = simulate ? `/api/system-info?simulate=${encodeURIComponent(simulate)}` : '/api/system-info';
+    const res = await fetch(apiUrl);
     const json = await res.json();
     if (json.success) {
       state.systemInfo = json.data;
@@ -63,7 +66,8 @@ async function fetchSystemInfo() {
 function renderSystemSpecs(data) {
   elSpecOs.textContent = `${data.os.type}`;
   elSpecPlatform.textContent = `${data.os.platform} (${data.os.release})`;
-  elSpecArch.textContent = `${data.os.arch} (${data.cpu.cores} Cores @ ${data.cpu.speed}MHz)`;
+  elSpecArch.textContent = `${data.os.arch} (${data.cpu.model || `${data.cpu.cores} Cores`})`;
+  elSpecArch.title = `${data.cpu.model || 'Unknown CPU'} (${data.cpu.cores} Cores @ ${data.cpu.speed}MHz)`;
   elSpecHost.textContent = data.hostname;
   elSpecNode.textContent = data.nodeVersion;
   elSpecHome.textContent = data.homeDir;

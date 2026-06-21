@@ -52,22 +52,166 @@ function safeResolvePath(fileName) {
   return resolved;
 }
 
+// Environment Variable Whitelist configuration (Case 34 schema)
+const safeEnvKeys = [
+  'PATH', 'OS', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS',
+  'USERDOMAIN', 'USERNAME', 'USERPROFILE', 'LANG', 'SHELL',
+  'NODE_ENV', 'APPDATA', 'LOCALAPPDATA', 'COMPUTERNAME',
+  'USER', 'HOME', 'TERM', 'PWD', 'LOGNAME'
+];
+
+// Helper to normalize env variables case-insensitively and apply fallbacks (Cases 12, 13, 14, 15, 34)
+function getFormattedEnv(customEnv) {
+  const envData = {};
+  const customEnvKeys = Object.keys(customEnv);
+  
+  safeEnvKeys.forEach(key => {
+    // Case-insensitive lookup (Case 15)
+    const actualKey = customEnvKeys.find(k => k.toUpperCase() === key.toUpperCase());
+    let val = actualKey !== undefined ? customEnv[actualKey] : undefined;
+    
+    // Default fallback values (Cases 12, 13, 34)
+    if (val === undefined) {
+      if (key === 'NODE_ENV') {
+        val = 'development';
+      } else {
+        val = 'N/A';
+      }
+    }
+    envData[key] = val;
+  });
+  return envData;
+}
+
 // 1. API Endpoint: System Info
 app.get('/api/system-info', (req, res) => {
   try {
-    // Whitelist environment variables to prevent sensitive leak
-    const safeEnvKeys = [
-      'PATH', 'OS', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS',
-      'USERDOMAIN', 'USERNAME', 'USERPROFILE', 'LANG', 'SHELL',
-      'NODE_ENV', 'APPDATA', 'LOCALAPPDATA', 'COMPUTERNAME',
-      'USER', 'HOME', 'TERM', 'PWD', 'LOGNAME'
-    ];
-    const envData = {};
-    safeEnvKeys.forEach(key => {
-      if (process.env[key]) {
-        envData[key] = process.env[key];
-      }
-    });
+    const simulate = req.query.simulate || req.headers['x-simulate-os'];
+    
+    if (simulate === 'darwin') {
+      return res.json({
+        success: true,
+        data: {
+          os: {
+            type: 'Darwin',
+            platform: 'darwin',
+            release: '23.4.0',
+            arch: 'arm64',
+            uptime: 36820,
+            totalMemory: 17179869184, // 16 GB
+            freeMemory: 3221225472,  // 3 GB (approx 81% used)
+          },
+          cpu: {
+            model: 'Apple M3 Max',
+            speed: 4050,
+            cores: 16,
+          },
+          hostname: 'MacBook-Pro-M3.local',
+          nodeVersion: 'v20.11.0',
+          homeDir: '/Users/macuser',
+          env: getFormattedEnv({
+            'PATH': '/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Users/macuser/.nvm/versions/node/v20.11.0/bin',
+            'USER': 'macuser',
+            'HOME': '/Users/macuser',
+            'SHELL': '/bin/zsh',
+            'LANG': 'en_US.UTF-8',
+            'TERM': 'xterm-256color',
+            'PWD': '/Users/macuser/Projects/Virus_JS',
+            'NODE_ENV': 'development',
+            'LOGNAME': 'macuser'
+          })
+        }
+      });
+    }
+
+    if (simulate === 'win32') {
+      return res.json({
+        success: true,
+        data: {
+          os: {
+            type: 'Windows_NT',
+            platform: 'win32',
+            release: '10.0.22631',
+            arch: 'x64',
+            uptime: 86400,
+            totalMemory: 34359738368, // 32 GB
+            freeMemory: 17179869184,  // 16 GB (50% used)
+          },
+          cpu: {
+            model: 'Intel(R) Core(TM) i9-14900K',
+            speed: 5800,
+            cores: 24,
+          },
+          hostname: 'DESKTOP-WIN11PRO',
+          nodeVersion: 'v21.7.1',
+          homeDir: 'C:\\Users\\winuser',
+          env: getFormattedEnv({
+            'PATH': 'C:\\Windows\\system32;C:\\Windows;C:\\Program Files\\nodejs\\',
+            'OS': 'Windows_NT',
+            'PROCESSOR_ARCHITECTURE': 'AMD64',
+            'NUMBER_OF_PROCESSORS': '24',
+            'USERNAME': 'winuser',
+            'USERPROFILE': 'C:\\Users\\winuser',
+            'COMPUTERNAME': 'DESKTOP-WIN11PRO',
+            'NODE_ENV': 'development'
+          })
+        }
+      });
+    }
+
+    if (simulate === 'edge_memory') {
+      return res.json({
+        success: true,
+        data: {
+          os: {
+            type: 'EdgeCaseOS',
+            platform: 'linux',
+            release: '1.0',
+            arch: 'x64',
+            uptime: 100,
+            totalMemory: 0, // Edge case: zero memory
+            freeMemory: 0,
+          },
+          cpu: {
+            model: 'Edge Memory CPU',
+            speed: 100,
+            cores: 1,
+          },
+          hostname: 'edge-memory-host',
+          nodeVersion: 'v20.0.0',
+          homeDir: '/home/edge',
+          env: getFormattedEnv({})
+        }
+      });
+    }
+
+    if (simulate === 'edge_cpu') {
+      return res.json({
+        success: true,
+        data: {
+          os: {
+            type: 'EdgeCaseOS',
+            platform: 'linux',
+            release: '1.0',
+            arch: 'x64',
+            uptime: 100,
+            totalMemory: 8589934592,
+            freeMemory: 4294967296,
+          },
+          cpu: {
+            model: '', // Empty CPU model
+            speed: 0,  // Zero speed
+            cores: 0,  // Zero cores
+          },
+          hostname: 'edge-cpu-host',
+          nodeVersion: 'v20.0.0',
+          homeDir: '/home/edge',
+          env: getFormattedEnv({})
+        }
+      });
+    }
+
+    const envData = getFormattedEnv(process.env);
 
     const cpuInfo = os.cpus();
     const systemInfo = {
@@ -126,10 +270,33 @@ app.get('/api/files', async (req, res) => {
 app.get('/api/files/:filename', async (req, res) => {
   try {
     const filePath = safeResolvePath(req.params.filename);
+    
+    // Check if it is a directory
+    const stats = await fs.stat(filePath);
+    if (stats.isDirectory()) {
+      return res.status(400).json({ success: false, error: 'Cannot read directory contents as a file.' });
+    }
+
+    // Limit read size to prevent Out of Memory (Case 31)
+    if (stats.size > 5 * 1024 * 1024) { // 5MB limit
+      return res.status(400).json({ success: false, error: 'File is too large to read (5MB limit).' });
+    }
+
+    // Refuse binary files (Case 27)
+    const ext = path.extname(filePath).toLowerCase();
+    const allowedExtensions = ['.js', '.css', '.html', '.json', '.txt', '.md'];
+    if (ext && !allowedExtensions.includes(ext)) {
+      return res.status(400).json({ success: false, error: 'Binary file reading is not supported.' });
+    }
+
     const content = await fs.readFile(filePath, 'utf-8');
     res.json({ success: true, content });
   } catch (err) {
-    res.status(404).json({ success: false, error: err.message });
+    if (err.code === 'ENOENT') {
+      res.status(404).json({ success: false, error: 'File not found.' });
+    } else {
+      res.status(500).json({ success: false, error: err.message });
+    }
   }
 });
 
@@ -141,14 +308,17 @@ app.post('/api/files', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Filename is required' });
     }
     const filePath = safeResolvePath(filename);
-    
-    // Check if file already exists
+
+    // Check if file already exists (Case 26)
     try {
       await fs.access(filePath);
       return res.status(400).json({ success: false, error: 'File already exists.' });
     } catch {
       // File doesn't exist, proceed to create
     }
+
+    // Ensure the parent directory exists recursively (Case 23)
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
 
     await fs.writeFile(filePath, content || '', 'utf-8');
     res.json({ success: true, message: 'File created successfully.' });
@@ -166,10 +336,18 @@ app.put('/api/files/:filename', async (req, res) => {
 
     // Verify it exists first
     await fs.access(filePath);
+    
+    // Ensure parent directory exists
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+
     await fs.writeFile(filePath, content || '', 'utf-8');
     res.json({ success: true, message: 'File updated successfully.' });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    if (err.code === 'ENOENT') {
+      res.status(404).json({ success: false, error: 'File not found.' });
+    } else {
+      res.status(500).json({ success: false, error: err.message });
+    }
   }
 });
 
@@ -179,9 +357,18 @@ app.delete('/api/files/:filename', async (req, res) => {
     const filename = req.params.filename;
     const filePath = safeResolvePath(filename);
 
-    await fs.access(filePath);
-    await fs.unlink(filePath);
-    res.json({ success: true, message: 'File deleted successfully.' });
+    try {
+      await fs.access(filePath);
+      await fs.unlink(filePath);
+      res.json({ success: true, message: 'File deleted successfully.' });
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        // File already deleted or doesn't exist (Case 24 - handle gracefully)
+        res.json({ success: true, message: 'File already deleted.' });
+      } else {
+        throw err;
+      }
+    }
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
